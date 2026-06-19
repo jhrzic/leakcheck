@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeakCheck — find out what your files are telling on you</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/output.css" />
+</head>
+<body class="font-sans bg-ink text-paper min-h-screen bg-grain">
+
+  <header class="border-b border-white/10">
+    <div class="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-sm bg-stamp-red/15 border border-stamp-red flex items-center justify-center">
+          <span class="font-display font-extrabold text-stamp-red text-sm">LC</span>
+        </div>
+        <div>
+          <p class="font-display font-bold tracking-tight">LeakCheck</p>
+          <p class="text-[10px] font-mono tracking-widest text-paper/40 uppercase">Metadata stripper &amp; anonymity auditor</p>
+        </div>
+      </div>
+      <span class="hidden sm:inline-flex items-center gap-2 text-[11px] font-mono text-forensic-teal border border-forensic-teal/40 rounded px-3 py-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-forensic-teal animate-pulse"></span>
+        processed in-memory, never stored
+      </span>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-6 py-12">
+
+    <section id="hero" class="mb-14">
+      <p class="eyebrow mb-3">Case file 00 — unopened</p>
+      <h1 class="font-display font-extrabold text-4xl sm:text-5xl leading-[1.05] tracking-tight max-w-2xl">
+        Your photos talk.<br/>
+        <span class="text-stamp-red">Even after you delete the caption.</span>
+      </h1>
+      <p class="mt-5 text-paper/60 max-w-xl leading-relaxed">
+        Every photo and document carries a hidden file inside it — GPS coordinates,
+        device serial numbers, timestamps, even your name. Drop a file below and we'll
+        pull back the redaction bar and show you exactly what's been riding along for free.
+      </p>
+    </section>
+
+    <section id="dropzone-section" class="mb-10">
+      <div id="dropzone"
+           class="case-card relative overflow-hidden cursor-pointer group transition-colors hover:border-tag-amber/40">
+        <div class="absolute -top-2 left-10 tape -rotate-3"></div>
+        <div class="absolute -top-2 right-16 tape rotate-2"></div>
+        <div class="px-8 py-16 text-center">
+          <p class="font-mono text-[11px] tracking-widest text-tag-amber uppercase mb-4">Evidence intake</p>
+          <p class="font-display font-bold text-xl mb-2">Drop a JPEG, PNG, or HEIC here</p>
+          <p class="text-paper/45 text-sm mb-6">or click to browse — nothing leaves your device until you say so</p>
+          <button type="button" id="browse-btn" class="btn-ghost text-sm">Select a file</button>
+          <input type="file" id="file-input" class="hidden" accept="image/jpeg,image/png,image/webp,image/tiff,image/heic,image/heif" />
+        </div>
+      </div>
+      <p id="upload-error" class="hidden mt-3 text-sm font-mono text-stamp-red"></p>
+    </section>
+
+    <section id="loading" class="hidden mb-10">
+      <div class="case-card px-8 py-10 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-tag-amber/5 to-transparent animate-scan"></div>
+        <p class="font-mono text-sm text-tag-amber tracking-widest uppercase mb-2">Dusting for metadata…</p>
+        <div class="w-full h-1.5 bg-redact rounded overflow-hidden">
+          <div class="h-full bg-tag-amber w-1/3 animate-pulse"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="results" class="hidden">
+
+      <div class="grid sm:grid-cols-[1fr_280px] gap-6 mb-6">
+
+        <div class="case-card px-7 py-7">
+          <div class="flex items-center justify-between mb-5">
+            <p class="eyebrow">Case file — <span id="result-filename" class="text-paper/70 normal-case tracking-normal"></span></p>
+            <span id="field-count-badge" class="font-mono text-[11px] text-paper/40"></span>
+          </div>
+          <div id="fields-list" class="divide-y-0"></div>
+          <p id="no-leaks-msg" class="hidden text-forensic-teal font-mono text-sm py-4">
+            No identifying metadata found. This file was already clean.
+          </p>
+        </div>
+
+        <div class="case-card px-6 py-7 flex flex-col items-center text-center justify-between">
+          <div>
+            <p class="eyebrow mb-4">Privacy score</p>
+            <div id="grade-stamp" class="stamp text-3xl mb-3 animate-stampIn">
+              <span id="grade-letter">F</span>
+            </div>
+            <p id="score-number" class="font-display font-bold text-2xl">0/100</p>
+            <p id="score-label" class="text-paper/50 text-sm font-mono mt-1">—</p>
+          </div>
+          <div class="w-full mt-6 pt-5 border-t border-white/10">
+            <p class="text-paper/40 text-[11px] font-mono mb-3 leading-relaxed">Share your score. Brag about your OpSec, or shame your camera roll.</p>
+            <div class="flex gap-2 justify-center">
+              <button id="share-x" class="flex-1 btn-ghost text-xs py-2">Share on X</button>
+              <button id="share-farcaster" class="flex-1 btn-ghost text-xs py-2">Farcaster</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="case-card px-7 py-6 mb-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <p class="font-display font-bold text-lg mb-1">Your stripped file is ready</p>
+          <p class="text-paper/50 text-sm">Same image, zero hidden data. Verified clean — safe to send.</p>
+        </div>
+        <a id="download-clean" href="#" download class="btn-primary text-sm whitespace-nowrap">Download clean file</a>
+      </div>
+
+      <button id="reset-btn" class="text-paper/40 text-sm font-mono hover:text-paper/70 transition-colors mb-16">
+        ← Run another file
+      </button>
+    </section>
+
+    <section id="blockd-hook" class="case-card px-7 py-8 sm:px-9 sm:py-9 border-forensic-teal/30 relative overflow-hidden mb-10">
+      <div class="absolute top-0 right-0 w-48 h-48 bg-forensic-teal/5 rounded-full -mr-20 -mt-20"></div>
+      <p class="eyebrow mb-3" style="color:#5FB59A">Beyond this file</p>
+      <h2 class="font-display font-bold text-2xl mb-3 max-w-lg leading-snug">
+        Stripping the file is step one. The app you sent it through is step two.
+      </h2>
+      <p class="text-paper/60 max-w-xl leading-relaxed mb-6 text-sm">
+        Even if your messaging app uses end-to-end encryption, its central servers
+        still log your IP address, your phone number, and who you talk to. That's a
+        metadata trail no amount of EXIF-stripping can fix. <strong class="text-paper/85">blockd.ai</strong>
+        routes every connection through Tor and never asks for a phone number to begin with.
+      </p>
+      <a href="https://blockd.ai" target="_blank" rel="noopener" class="inline-flex items-center gap-2 btn-primary text-sm" style="background:#2E8B7E">
+        Upgrade your privacy at blockd.ai
+        <span aria-hidden="true">→</span>
+      </a>
+    </section>
+
+  </main>
+
+  <footer class="border-t border-white/10">
+    <div class="max-w-5xl mx-auto px-6 py-8 flex flex-col sm:flex-row justify-between gap-2 text-paper/30 text-xs font-mono">
+      <p>LeakCheck processes files in-memory only. Nothing is written to disk or stored.</p>
+      <p>A blockd.ai project</p>
+    </div>
+  </footer>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
